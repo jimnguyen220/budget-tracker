@@ -6,58 +6,57 @@ request.onerror = e => {
     console.log("Error: " + e.target.errorCode);
 };
 
+request.onupgradeneeded = ({target}) => {
+    const db = target.result;
+    db.createObjectStore("transactions", { autoIncrement: true});
+};
+
 request.onsuccess = event => {
-    db = request.result;
+    db = event.target.result
     console.log(request.result)
     if (navigator.onLine) {
         checkDatabase();
     }
 };
 
-request.onupgradeneeded = ({target}) => {
-    const db = target.result;
-    db.createObjectStore("transactions", {keyPath: "transactionsID", autoIncrement: true});
+function saveRecord(record) {
+    db = request.result;
+    const transactions = db.transaction(["transactions"], "readwrite");
+    const transactionsStore = transactions.objectStore("transactions");
+
+    transactionsStore.add(record);
+
 };
 
 function checkDatabase() {
+    db = request.result;
     const transactions = db.transaction(["transactions"], "readwrite");
     const transactionsStore = transactions.objectStore("transactions");
     const getAll = transactionsStore.getAll();
 
-    request.onsuccess = () => {
-        // transactionsStore.clear();
-
-        // transactionsStore.add({name: "payday", value: 20});
-
-        // const getRequest = transactionsStore.get(1);
-        // getRequest.onsuccess = () => {
-        // console.log(getRequest.result);
-        // };
-        // getRequest.onsuccess = e => {
-        // console.log("Error: ", e.target);
-        // };
+    getAll.onsuccess = () => {
 
         if (getAll.result.length > 0) {
-            $.ajax({
-                type: "POST",
-                url: "/api/transaction/bulk",
-                data: JSON.stringify(getAll.result),
+            fetch("/api/transaction/bulk", {
+                method: "POST",
+                body: JSON.stringify(getAll.result),
                 headers: {
                     Accept: "application/json, text/plain, */*",
                     "Content-Type": "application/json"
-                },
-                success: function(msg){
-                    const transaction = db.transaction(["transactions"], "readwrite");
-                    const store = transaction.objectStore("transactions");
-                    store.clear();
-                    populateTable();
-                },
-                error: function(XMLHttpRequest, textStatus, errorThrown) {
-                    console.log(getAll.result);
-                    console.log("Failed to Save DB");
-                    console.log(XMLHttpRequest, textStatus, errorThrown)
                 }
+            })
+            .then(response => response.json())
+            .then(() => {
+                // if successful, open a transaction on your pending db
+                const transaction = db.transaction(["transactions"], "readwrite");
+
+                // access your pending object store
+                const store = transaction.objectStore("transactions");
+
+                // clear all items in your store
+                store.clear();
             });
+
         }
     };
 
