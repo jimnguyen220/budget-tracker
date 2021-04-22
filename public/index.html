@@ -43,34 +43,8 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+  <script src="db.js"></script>
   <script src="index.js"></script>
-  <script>
-    // this script block allows us to save data to the browser while offline
-    const request = indexedDB.open("budget", 2);
-
-    request.onsuccess = event => {
-      console.log(request.result)
-    };
-
-    request.onupgradeneeded = ({target}) => {
-      const db = target.result;
-      const objectStore = db.createObjectStore("transactions", {keyPath: "transactionsID"});
-      objectStore.createIndex("transactionsIndex", "transactions");
-    };
-
-    // request.onsuccess = () => {
-    //   const db = request.result;
-    //   const transactions = db.transaction(["transactions"], "readwrite");
-    //   const transactionsStore = transactions.objectStore("transactions");
-    //   const transactionsIndex = transactionsStore.index("transactionsIndex");
-
-    //   transactionsStore.add({listId: "1", status: "complete"});
-
-      
-
-    // };
-    
-  </script>
   <script>
     // this script block loads our service-worker
     if ("serviceWorker" in navigator) {
